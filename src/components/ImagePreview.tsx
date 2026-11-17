@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Upload } from "lucide-react";
 
 interface Prediction {
@@ -17,25 +17,12 @@ interface ImagePreviewProps {
 
 export const ImagePreview = ({ preview, predictions }: ImagePreviewProps) => {
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    if (containerRef.current && imageSize.width && imageSize.height) {
-      const containerWidth = containerRef.current.clientWidth;
-      const containerHeight = containerRef.current.clientHeight;
-      const scaleX = containerWidth / imageSize.width;
-      const scaleY = containerHeight / imageSize.height;
-      setScale(Math.min(scaleX, scaleY));
-    }
-  }, [imageSize, containerRef.current]);
-
   if (!preview) {
     return (
       <div className="flex flex-col items-center justify-center pt-5 pb-6">
         <Upload className="w-12 h-12 text-slate-400 mb-4" />
         <p className="mb-2 text-sm text-slate-300">
-          <span className="font-semibold">Click to upload</span> or drag and drop
+          <span className="font-semibold">Click to upload</span>
         </p>
         <p className="text-xs text-slate-400">PNG, JPG up to 5MB</p>
       </div>
@@ -43,7 +30,7 @@ export const ImagePreview = ({ preview, predictions }: ImagePreviewProps) => {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full h-64 overflow-hidden">
+    <div className="relative w-full h-64 overflow-hidden">
       <img
         src={preview}
         alt="Preview"
@@ -53,30 +40,13 @@ export const ImagePreview = ({ preview, predictions }: ImagePreviewProps) => {
           setImageSize({ width: img.naturalWidth, height: img.naturalHeight });
         }}
       />
-      {predictions?.map((pred, index) => {
-        const x = (pred.x - pred.width/2) * scale;
-        const y = (pred.y - pred.height/2) * scale;
-        const width = pred.width * scale;
-        const height = pred.height * scale;
-        
-        return (
-          <div
-            key={index}
-            className="absolute border-2 border-purple-500"
-            style={{
-              left: `${x}px`,
-              top: `${y}px`,
-              width: `${width}px`,
-              height: `${height}px`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <div className="absolute top-0 left-0 -translate-y-6 bg-purple-500 text-white px-2 py-1 text-xs rounded whitespace-nowrap">
-              {pred.class} ({(pred.confidence * 100).toFixed(1)}%)
-            </div>
-          </div>
-        );
-      })}
+      {imageSize.width > 0 && <svg className="pointer-events-none absolute inset-0 w-full h-full"
+        viewBox={`0 0 ${imageSize.width} ${imageSize.height}`}>
+        {predictions?.map((p, i) => <rect key={i} x={p.x - p.width / 2} y={p.y - p.height / 2}
+          width={p.width} height={p.height} fill="none" stroke="#a855f7" strokeWidth="2" vectorEffect="non-scaling-stroke">
+          <title>{p.class} ({Math.round(p.confidence * 100)}%)</title>
+        </rect>)}
+      </svg>}
     </div>
   );
 };
